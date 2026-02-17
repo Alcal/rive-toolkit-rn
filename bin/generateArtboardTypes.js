@@ -20,10 +20,11 @@ function toIdentifier(name) {
  * Generate the TypeScript suite into outDir.
  * @param {string} outDir - Output directory (created if needed)
  * @param {string[]} artboardNames - List of artboard names from the .riv file
- * @param {{ baseName?: string }} options - Optional base name for generated types
+ * @param {{ baseName?: string, stateMachinesByArtboard?: Record<string, string[]> }} options - Optional base name and state machine info
  */
 function generateArtboardTypes(outDir, artboardNames, options = {}) {
   const baseName = options.baseName || 'RiveArtboard';
+  const stateMachinesByArtboard = options.stateMachinesByArtboard || {};
   const safeNames = artboardNames.map(toIdentifier);
 
   fs.mkdirSync(outDir, { recursive: true });
@@ -59,20 +60,60 @@ export function is${baseName}Name(name: string): name is ${baseName}Name {
   ];
   fs.writeFileSync(path.join(outDir, 'artboardNames.ts'), constantsLines.join('\n'), 'utf8');
 
-  // 3) Index that re-exports the suite
-  const indexContent = `/**
- * Generated Rive types and constants for React Native (RiveView).
- * Source: artboard names from the linked .riv file.
- */
-export type { ${baseName}Name } from './artboards';
+  const files = ['artboards.ts', 'artboardNames.ts'];
+  let stateMachineNames = [];
+  let indexExports = `export type { ${baseName}Name } from './artboards';
 export { ${baseName}Names, is${baseName}Name } from './artboards';
 export type { ${baseName}Id } from './artboardNames';
 export { ${safeNames.join(', ')} } from './artboardNames';
 `;
 
-  fs.writeFileSync(path.join(outDir, 'index.ts'), indexContent, 'utf8');
+  // 3) State machine names and per-artboard mapping (when available)
+  const allStateMachineNames = [...new Set(Object.values(stateMachinesByArtboard).flat())];
+  if (allStateMachineNames.length > 0) {
+    stateMachineNames = allStateMachineNames.sort();
+    const smUnion = stateMachineNames.map((n) => JSON.stringify(n)).join(' | ');
+    const smBaseName = baseName.replace(/Artboard$/, '') || 'Rive';
+    const stateMachinesContent = `/**
+ * State machine names from the source Rive file.
+ * Use with RiveView \`stateMachineName\` prop for type-safe state machine selection.
+ */
+import type { ${baseName}Name } from './artboards';
 
-  return { artboardNames, files: ['artboards.ts', 'artboardNames.ts', 'index.ts'] };
+export type ${smBaseName}StateMachineName = ${smUnion};
+
+/** All state machine names as a readonly tuple. */
+export const ${smBaseName}StateMachineNames: readonly ${smBaseName}StateMachineName[] = ${JSON.stringify(stateMachineNames)} as const;
+
+/** Type guard: checks if \`name\` is a valid state machine name from this file. */
+export function is${smBaseName}StateMachineName(name: string): name is ${smBaseName}StateMachineName {
+  return (${smBaseName}StateMachineNames as readonly string[]).includes(name);
+}
+
+/** State machine names per artboard (for type-safe \`stateMachineName\` when artboard is known). */
+export const stateMachinesByArtboard: Partial<Record<${baseName}Name, readonly ${smBaseName}StateMachineName[]>> = ${JSON.stringify(stateMachinesByArtboard, null, 2)} as const;
+`;
+
+    fs.writeFileSync(path.join(outDir, 'stateMachines.ts'), stateMachinesContent, 'utf8');
+    files.push('stateMachines.ts');
+    indexExports += `
+export type { ${smBaseName}StateMachineName } from './stateMachines';
+export { ${smBaseName}StateMachineNames, is${smBaseName}StateMachineName, stateMachinesByArtboard } from './stateMachines';
+`;
+  }
+
+  // 4) Index that re-exports the suite
+  const indexContent = `/**
+ * Generated Rive types and constants for React Native (RiveView).
+ * Source: artboard and state machine names from the linked .riv file.
+ */
+${indexExports}
+`;
+
+  fs.writeFileSync(path.join(outDir, 'index.ts'), indexContent, 'utf8');
+  files.push('index.ts');
+
+  return { artboardNames, stateMachineNames, files };
 }
 
 module.exports = { generateArtboardTypes, toIdentifier };

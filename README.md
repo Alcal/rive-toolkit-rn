@@ -1,14 +1,14 @@
 # rive-toolkit-rn
 
-A React Native toolkit for [Rive](https://rive.app) animations — higher-level components, hooks, and utilities built on top of `rive-react-native`.
+A React Native toolkit for [Rive](https://rive.app) animations — higher-level components, hooks, and utilities built on top of `@rive-app/react-native`.
 
 ## Installation
 
 ```bash
-npm install rive-toolkit-rn rive-react-native
+npm install rive-toolkit-rn @rive-app/react-native react-native-nitro-modules
 ```
 
-> **Peer dependencies:** `react >= 18`, `react-native >= 0.72`, `rive-react-native >= 6`.
+> **Peer dependencies:** `react >= 18`, `react-native >= 0.72`, `@rive-app/react-native >= 0.2`, `react-native-nitro-modules >= 0.33.2`.
 
 ## Quick Start
 
@@ -65,9 +65,9 @@ The CLI can generate a TypeScript suite (types and constants) from a Rive file�
 npx rive-toolkit-rn generate --src path/to/file.riv --out path/to/generated
 ```
 
-- **`--src`** – Path to the source `.riv` file. If artboard names cannot be extracted (e.g. in Node without a Rive runtime), use `--artboards` instead.
+- **`--src`** – Path to the source `.riv` file. The CLI loads it with the Rive runtime to extract artboard and state machine names. Use `--artboards` if the file cannot be loaded.
 - **`--out`** – Output directory for generated files (required).
-- **`--artboards "Name1,Name2"`** – Comma-separated artboard names (optional; use when `--src` extraction is not available).
+- **`--artboards "Name1,Name2"`** – Comma-separated artboard names (optional override; use when the file cannot be loaded).
 - **`--name <base>`** – Base name for generated types (default: `RiveArtboard`).
 
 Generated files:
@@ -86,7 +86,7 @@ const { riveFile } = useRiveFile(require("./file.riv"));
 return <RiveView file={riveFile} artboard={Main} />;
 ```
 
-For extraction from `.riv`, the CLI tries the Rive runtime first (requires `@rive-app/canvas` as a dev dependency). If that fails, use `--artboards "A,B,C"` with the names from the Rive editor.
+The CLI uses `@rive-app/canvas` (a dependency of rive-toolkit-rn) to load the `.riv` file and extract artboard and state machine names. If loading fails, use `--artboards "A,B,C"` with the names from the Rive editor.
 
 ## API
 

@@ -6,7 +6,7 @@ export default defineConfig({
   dts: true,
   sourcemap: true,
   clean: true,
-  external: ["react", "react-native", "rive-react-native"],
+  external: ["react", "react-native", "@rive-app/react-native"],
   treeshake: true,
   splitting: false,
 });
