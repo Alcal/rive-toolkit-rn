@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "generate": "rive-toolkit-rn generate",
+    "generate": "rive-toolkit-rn generate --src ./scripting_converter.riv --out ./rive-generated/ --artboards Main",
     "android": "react-native run-android",
     "ios": "react-native run-ios",
     "lint": "eslint .",

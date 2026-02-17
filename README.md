@@ -57,6 +57,37 @@ function Interactive() {
 }
 ```
 
+## Generate types from a .riv file
+
+The CLI can generate a TypeScript suite (types and constants) from a Rive file’s **artboards**, so you can use type-safe artboard names with `RiveView` (e.g. `artboard` / `artboardName`).
+
+```bash
+npx rive-toolkit-rn generate --src path/to/file.riv --out path/to/generated
+```
+
+- **`--src`** – Path to the source `.riv` file. If artboard names cannot be extracted (e.g. in Node without a Rive runtime), use `--artboards` instead.
+- **`--out`** – Output directory for generated files (required).
+- **`--artboards "Name1,Name2"`** – Comma-separated artboard names (optional; use when `--src` extraction is not available).
+- **`--name <base>`** – Base name for generated types (default: `RiveArtboard`).
+
+Generated files:
+
+- **`artboards.ts`** – `ArtboardName` union type, `ArtboardNames` array, and `isArtboardName()` type guard.
+- **`artboardNames.ts`** – Named constants per artboard and `ArtboardId` type.
+- **`index.ts`** – Re-exports the suite.
+
+Example usage in your app:
+
+```tsx
+import { RiveView, useRiveFile } from "@rive-app/react-native";
+import { Main, ExampleRiveName } from "./generated";
+
+const { riveFile } = useRiveFile(require("./file.riv"));
+return <RiveView file={riveFile} artboard={Main} />;
+```
+
+For extraction from `.riv`, the CLI tries the Rive runtime first (requires `@rive-app/canvas` as a dev dependency). If that fails, use `--artboards "A,B,C"` with the names from the Rive editor.
+
 ## API
 
 | Export                | Kind      | Description                                  |
